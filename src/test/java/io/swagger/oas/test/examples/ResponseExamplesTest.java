@@ -46,7 +46,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
@@ -83,13 +83,13 @@ public class ResponseExamplesTest {
         ContainerRequestContext requestContext = mock(ContainerRequestContext.class);
         UriInfo uriInfo = mock( UriInfo.class );
 
-        stub( uriInfo.getPath()).toReturn( "/mockResponses/responseWithExamples");
-        stub( uriInfo.getQueryParameters()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( uriInfo.getPathParameters()).toReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPath()).thenReturn( "/mockResponses/responseWithExamples");
+        when(uriInfo.getQueryParameters()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPathParameters()).thenReturn( new MultivaluedHashMap<String, String>());
 
-        stub( requestContext.getAcceptableMediaTypes()).toReturn(Arrays.asList(MediaType.APPLICATION_JSON_TYPE));
-        stub( requestContext.getHeaders()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( requestContext.getUriInfo()).toReturn( uriInfo );
+        when(requestContext.getAcceptableMediaTypes()).thenReturn(Arrays.asList(MediaType.APPLICATION_JSON_TYPE));
+        when(requestContext.getHeaders()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(requestContext.getUriInfo()).thenReturn( uriInfo );
 
         Response response = controller.apply( requestContext );
 
@@ -116,13 +116,13 @@ public class ResponseExamplesTest {
         ContainerRequestContext requestContext = mock(ContainerRequestContext.class);
         UriInfo uriInfo = mock( UriInfo.class );
 
-        stub( uriInfo.getPath()).toReturn( "/mockResponses/responseWithExamples");
-        stub( uriInfo.getQueryParameters()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( uriInfo.getPathParameters()).toReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPath()).thenReturn( "/mockResponses/responseWithExamples");
+        when(uriInfo.getQueryParameters()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPathParameters()).thenReturn( new MultivaluedHashMap<String, String>());
 
-        stub( requestContext.getAcceptableMediaTypes()).toReturn(Arrays.asList(MediaType.valueOf("application/yaml")));
-        stub( requestContext.getHeaders()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( requestContext.getUriInfo()).toReturn( uriInfo );
+        when(requestContext.getAcceptableMediaTypes()).thenReturn(Arrays.asList(MediaType.valueOf("application/yaml")));
+        when(requestContext.getHeaders()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(requestContext.getUriInfo()).thenReturn( uriInfo );
 
         Response response = controller.apply( requestContext );
 
@@ -151,13 +151,13 @@ public class ResponseExamplesTest {
         ContainerRequestContext requestContext = mock(ContainerRequestContext.class);
         UriInfo uriInfo = mock( UriInfo.class );
 
-        stub( uriInfo.getPath()).toReturn( "/mockResponses/objectMultipleExamples");
-        stub( uriInfo.getQueryParameters()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( uriInfo.getPathParameters()).toReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPath()).thenReturn( "/mockResponses/objectMultipleExamples");
+        when(uriInfo.getQueryParameters()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPathParameters()).thenReturn( new MultivaluedHashMap<String, String>());
 
-        stub( requestContext.getAcceptableMediaTypes()).toReturn(Arrays.asList(MediaType.APPLICATION_JSON_TYPE));
-        stub( requestContext.getHeaders()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( requestContext.getUriInfo()).toReturn( uriInfo );
+        when(requestContext.getAcceptableMediaTypes()).thenReturn(Arrays.asList(MediaType.APPLICATION_JSON_TYPE));
+        when(requestContext.getHeaders()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(requestContext.getUriInfo()).thenReturn( uriInfo );
 
         Response response = controller.apply( requestContext );
 
@@ -211,13 +211,13 @@ public class ResponseExamplesTest {
         ContainerRequestContext requestContext = mock(ContainerRequestContext.class);
         UriInfo uriInfo = mock( UriInfo.class );
 
-        stub( uriInfo.getPath()).toReturn( "/mockResponses/objectMultipleExamples");
-        stub( uriInfo.getQueryParameters()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( uriInfo.getPathParameters()).toReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPath()).thenReturn( "/mockResponses/objectMultipleExamples");
+        when(uriInfo.getQueryParameters()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPathParameters()).thenReturn( new MultivaluedHashMap<String, String>());
 
-        stub( requestContext.getAcceptableMediaTypes()).toReturn(Arrays.asList(MediaType.APPLICATION_JSON_TYPE));
-        stub( requestContext.getHeaders()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( requestContext.getUriInfo()).toReturn( uriInfo );
+        when(requestContext.getAcceptableMediaTypes()).thenReturn(Arrays.asList(MediaType.APPLICATION_JSON_TYPE));
+        when(requestContext.getHeaders()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(requestContext.getUriInfo()).thenReturn( uriInfo );
 
         Response response = controller.apply( requestContext );
 
@@ -269,14 +269,14 @@ public class ResponseExamplesTest {
         ContainerRequestContext requestContext = mock(ContainerRequestContext.class);
         UriInfo uriInfo = mock( UriInfo.class );
 
-        stub( uriInfo.getPath()).toReturn( "/mockResponses/objectMultipleExamples");
-        stub( uriInfo.getQueryParameters()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( uriInfo.getPathParameters()).toReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPath()).thenReturn( "/mockResponses/objectMultipleExamples");
+        when(uriInfo.getQueryParameters()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPathParameters()).thenReturn( new MultivaluedHashMap<String, String>());
 
 
-        stub( requestContext.getHeaders()).toReturn( new MultivaluedHashMap<String, String>());
+        when(requestContext.getHeaders()).thenReturn( new MultivaluedHashMap<String, String>());
         requestContext.getHeaders().add("Accept","application/json");
-        stub( requestContext.getUriInfo()).toReturn( uriInfo );
+        when(requestContext.getUriInfo()).thenReturn( uriInfo );
 
         Response response = controller.apply( requestContext );
 
@@ -306,14 +306,14 @@ public class ResponseExamplesTest {
         ContainerRequestContext requestContext = mock(ContainerRequestContext.class);
         UriInfo uriInfo = mock( UriInfo.class );
 
-        stub( uriInfo.getPath()).toReturn( "/mockResponses/objectMultipleExamples");
-        stub( uriInfo.getQueryParameters()).toReturn( new MultivaluedHashMap<String, String>());
-        stub( uriInfo.getPathParameters()).toReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPath()).thenReturn( "/mockResponses/objectMultipleExamples");
+        when(uriInfo.getQueryParameters()).thenReturn( new MultivaluedHashMap<String, String>());
+        when(uriInfo.getPathParameters()).thenReturn( new MultivaluedHashMap<String, String>());
 
 
-        stub( requestContext.getHeaders()).toReturn( new MultivaluedHashMap<String, String>());
+        when(requestContext.getHeaders()).thenReturn( new MultivaluedHashMap<String, String>());
         requestContext.getHeaders().add("Accept","application/xml");
-        stub( requestContext.getUriInfo()).toReturn( uriInfo );
+        when(requestContext.getUriInfo()).thenReturn( uriInfo );
 
         Response response = controller.apply( requestContext );
 

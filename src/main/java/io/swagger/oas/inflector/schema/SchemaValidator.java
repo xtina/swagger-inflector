@@ -1,23 +1,24 @@
 package io.swagger.oas.inflector.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.fge.jsonschema.core.exceptions.ProcessingException;
-import com.github.fge.jsonschema.core.report.ProcessingReport;
-import com.github.fge.jsonschema.main.JsonSchema;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import io.swagger.v3.core.util.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class SchemaValidator {
     static Map<String, JsonSchema> SCHEMA_CACHE = new HashMap<String, JsonSchema>();
     private static final Logger LOGGER = LoggerFactory.getLogger(SchemaValidator.class);
+    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
 
-    public enum Direction{
+    public enum Direction {
         INPUT,
         OUTPUT
     }
@@ -25,39 +26,42 @@ public class SchemaValidator {
     public static boolean validate(Object argument, String schema, Direction direction) {
         try {
             JsonNode schemaObject = Json.mapper().readTree(schema);
-            JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
             JsonNode content = Json.mapper().convertValue(argument, JsonNode.class);
-            com.github.fge.jsonschema.main.JsonSchema jsonSchema = factory.getJsonSchema(schemaObject);
+            JsonSchema jsonSchema = SCHEMA_FACTORY.getSchema(schemaObject);
 
-            ProcessingReport report = jsonSchema.validate(content);
-            if(!report.isSuccess()) {
-                if(direction.equals(Direction.INPUT)) {
+            Set<ValidationMessage> errors = jsonSchema.validate(content);
+            if (!errors.isEmpty()) {
+                if (direction.equals(Direction.INPUT)) {
                     LOGGER.warn("input: " + content.toString() + "\n" + "does not match schema: \n" + schema);
-                }
-                else {
+                } else {
                     LOGGER.warn("response: " + content.toString() + "\n" + "does not match schema: \n" + schema);
                 }
+                for (ValidationMessage error : errors) {
+                    LOGGER.warn("  validation error: " + error.getMessage());
+                }
             }
-            return report.isSuccess();
-        }
-        catch (Exception e) {
+            return errors.isEmpty();
+        } catch (Exception e) {
             LOGGER.error("can't validate model against schema", e);
         }
 
         return true;
     }
 
-    public static com.github.fge.jsonschema.main.JsonSchema getValidationSchema(String schema) throws IOException, ProcessingException {
+    public static JsonSchema getValidationSchema(String schema) {
         schema = schema.trim();
 
         JsonSchema output = SCHEMA_CACHE.get(schema);
 
-        if(output == null) {
-            JsonNode schemaObject = Json.mapper().readTree(schema);
-            JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
-            com.github.fge.jsonschema.main.JsonSchema jsonSchema = factory.getJsonSchema(schemaObject);
-            SCHEMA_CACHE.put(schema, jsonSchema);
-            output = jsonSchema;
+        if (output == null) {
+            try {
+                JsonNode schemaObject = Json.mapper().readTree(schema);
+                JsonSchema jsonSchema = SCHEMA_FACTORY.getSchema(schemaObject);
+                SCHEMA_CACHE.put(schema, jsonSchema);
+                output = jsonSchema;
+            } catch (Exception e) {
+                LOGGER.error("can't parse schema: " + schema, e);
+            }
         }
         return output;
     }

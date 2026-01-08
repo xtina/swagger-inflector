@@ -509,12 +509,12 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.10.19</version>
+            <artifactId>mockito-core</artifactId>
+            <version>4.11.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.java-json-tools</groupId>
+            <groupId>com.networknt</groupId>
             <artifactId>json-schema-validator</artifactId>
             <version>${json-schema-validator-version}</version>
         </dependency>
@@ -531,16 +531,16 @@
     </dependencies>
     <properties>
         <maven-javadoc-version>3.6.2</maven-javadoc-version>
-        <swagger-core-version>2.2.35</swagger-core-version>
-        <swagger-parser-version>2.1.31</swagger-parser-version>
+        <swagger-core-version>2.2.41</swagger-core-version>
+        <swagger-parser-version>2.1.36</swagger-parser-version>
         <jackson.version>2.19.0</jackson.version>
         <jetty-version>9.4.56.v20240826</jetty-version>
-        <jersey2-version>2.46</jersey2-version>
+        <jersey2-version>2.47</jersey2-version>
         <servlet-api-version>3.1.0</servlet-api-version>
         <commons-io-version>2.20.0</commons-io-version>
         <commons-lang-version>3.18.0</commons-lang-version>
         <commons-csv-version>1.10.0</commons-csv-version>
-        <json-schema-validator-version>2.2.14</json-schema-validator-version>
+        <json-schema-validator-version>1.5.9</json-schema-validator-version>
 
         <logback-version>1.5.22</logback-version>
         <junit-version>4.13.2</junit-version>
