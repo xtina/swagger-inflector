@@ -33,43 +33,16 @@ jobs:
           ${{ runner.os }}-maven-
     - name: Run tests
       run: |
-        ./mvnw --no-transfer-progress -B test
-    - name: Build with Maven, Deploy snapshot to maven central
+        ./mvnw --no-transfer-progress -B verify
+    - name: Deploy snapshot to Maven Central
+      if: matrix.java == 8 && github.repository == 'swagger-api/swagger-inflector'
       run: |
-        # Check if this is a fork - skip deployment for forks
-        if [[ "${{ github.repository }}" != "swagger-api/swagger-inflector" ]];
-        then
-          echo "Repository is a fork (${{ github.repository }}), skipping Maven Central deployment"
-          export SKIP_DEPLOY=true
+        export MY_POM_VERSION=`./mvnw -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`
+        echo "POM VERSION: ${MY_POM_VERSION}"
+        if [[ $MY_POM_VERSION =~ ^.*SNAPSHOT$ ]]; then
+          ./mvnw --no-transfer-progress -B deploy -DskipTests
         else
-          echo "Repository is original (${{ github.repository }}), proceeding with deployment"
-          export SKIP_DEPLOY=false
-        fi
-        
-        export MY_POM_VERSION=`./mvnw -q -Dexec.executable="echo" -Dexec.args='${projects.version}' --non-recursive org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`
-        echo "POM VERSION" ${MY_POM_VERSION}
-        if [[ $MY_POM_VERSION =~ ^.*SNAPSHOT$ ]];
-        then
-          # Run integration tests and package (unit tests already ran in test step)
-          # -DskipTests skips unit tests, -DskipITs=false ensures integration tests run
-          ./mvnw --no-transfer-progress -B verify -DskipTests -DskipITs=false
-          export MY_JAVA_VERSION=`java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1`
-          echo "JAVA VERSION" ${MY_JAVA_VERSION}
-          if [[ ${MY_JAVA_VERSION} == "8" ]] && [[ "${SKIP_DEPLOY}" != "true" ]];
-          then
-            export MY_POM_VERSION=`./mvnw -q -Dexec.executable="echo" -Dexec.args='${projects.version}' --non-recursive org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`
-            echo "POM VERSION" ${MY_POM_VERSION}
-            ./mvnw --no-transfer-progress -B clean deploy
-          else
-            if [[ "${SKIP_DEPLOY}" == "true" ]];
-            then
-              echo "Skipping deployment - repository is a fork"
-            else
-              echo "not deploying on java version: " ${MY_JAVA_VERSION}
-            fi
-          fi
-        else
-          echo "not building and maven publishing project as it is a release version: " ${MY_JAVA_VERSION}
+          echo "Not deploying - not a SNAPSHOT version"
         fi
       env:
         MAVEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}

@@ -1,15 +1,14 @@
 package io.swagger.oas.test.schema;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.InputFormat;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import io.swagger.oas.inflector.schema.SchemaValidator;
-import io.swagger.v3.core.util.Json;
 import org.testng.annotations.Test;
 
-import java.util.Set;
+import java.util.List;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
@@ -116,15 +115,12 @@ public class SchemaValidationTest {
                 "    }\n" +
                 "  }\n" +
                 "}";
-        JsonNode schemaObject = Json.mapper().readTree(schemaAsString);
-        JsonNode content = Json.mapper().readValue("{\n" +
-                "  \"id\": 123\n" +
-                "}", JsonNode.class);
+        String content = "{\n  \"id\": 123\n}";
 
-        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
-        JsonSchema schema = factory.getSchema(schemaObject);
+        SchemaRegistry registry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
+        Schema schema = registry.getSchema(schemaAsString, InputFormat.JSON);
 
-        Set<ValidationMessage> errors = schema.validate(content);
+        List<Error> errors = schema.validate(content, InputFormat.JSON);
         assertTrue(errors.isEmpty());
     }
 
@@ -132,7 +128,7 @@ public class SchemaValidationTest {
     public void testGetValidationSchema() {
         String schema = "{\"type\": \"object\"}";
 
-        JsonSchema result = SchemaValidator.getValidationSchema(schema);
+        Schema result = SchemaValidator.getValidationSchema(schema);
 
         assertNotNull(result);
     }
@@ -142,8 +138,8 @@ public class SchemaValidationTest {
         // Use a unique schema to avoid cache pollution from other tests
         String schema = "{\"type\": \"boolean\", \"description\": \"cache-test\"}";
 
-        JsonSchema first = SchemaValidator.getValidationSchema(schema);
-        JsonSchema second = SchemaValidator.getValidationSchema(schema);
+        Schema first = SchemaValidator.getValidationSchema(schema);
+        Schema second = SchemaValidator.getValidationSchema(schema);
 
         assertSame(first, second);
     }
@@ -153,8 +149,8 @@ public class SchemaValidationTest {
         String schemaWithWhitespace = "  {\"type\": \"number\"}  ";
         String schemaTrimmed = "{\"type\": \"number\"}";
 
-        JsonSchema fromWhitespace = SchemaValidator.getValidationSchema(schemaWithWhitespace);
-        JsonSchema fromTrimmed = SchemaValidator.getValidationSchema(schemaTrimmed);
+        Schema fromWhitespace = SchemaValidator.getValidationSchema(schemaWithWhitespace);
+        Schema fromTrimmed = SchemaValidator.getValidationSchema(schemaTrimmed);
 
         assertNotNull(fromWhitespace);
         assertSame(fromWhitespace, fromTrimmed);
@@ -164,7 +160,7 @@ public class SchemaValidationTest {
     public void testGetValidationSchemaInvalidJson() {
         String invalidSchema = "not valid json";
 
-        JsonSchema result = SchemaValidator.getValidationSchema(invalidSchema);
+        Schema result = SchemaValidator.getValidationSchema(invalidSchema);
 
         assertNull(result);
     }

@@ -31,21 +31,14 @@ jobs:
     - name: Autobuild
       uses: github/codeql-action/autobuild@v3
 
-    # Upload results to Security tab (only works on upstream repo)
     - name: Perform CodeQL Analysis
-      if: github.repository == 'swagger-api/swagger-inflector'
-      uses: github/codeql-action/analyze@v3
-
-    # On forks: output SARIF to file and upload as artifact
-    - name: Perform CodeQL Analysis (fork)
-      if: github.repository != 'swagger-api/swagger-inflector'
+      id: codeql
       uses: github/codeql-action/analyze@v3
       with:
         output: codeql-results
-        upload: false
+      continue-on-error: true
 
     - name: Check for high-severity findings
-      if: github.repository != 'swagger-api/swagger-inflector'
       run: |
         echo "Checking SARIF files for high-severity findings..."
 
@@ -53,7 +46,6 @@ jobs:
           [ -f "$sarif_file" ] || continue
           echo "Analyzing: $sarif_file"
 
-          # Count error-level results (high/critical severity)
           error_count=$(jq '[.runs[].results[] | select(.level == "error")] | length' "$sarif_file")
 
           if [ "$error_count" -gt 0 ]; then
@@ -66,7 +58,7 @@ jobs:
         echo "No high-severity findings detected"
 
     - name: Upload CodeQL results as artifact
-      if: github.repository != 'swagger-api/swagger-inflector'
+      if: steps.codeql.outcome == 'failure'
       uses: actions/upload-artifact@v4
       with:
         name: codeql-results

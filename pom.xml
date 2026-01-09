@@ -166,6 +166,11 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--
+                Java 8 compatibility is required for downstream consumers still on older JVMs.
+                This prevents upgrading to newer library versions that require Java 11/17+.
+                Dropping Java 8 support would be a breaking change requiring a major version bump.
+            -->
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
@@ -528,7 +533,7 @@
         <commons-io-version>2.20.0</commons-io-version>
         <commons-lang-version>3.18.0</commons-lang-version>
         <commons-csv-version>1.10.0</commons-csv-version>
-        <json-schema-validator-version>1.5.9</json-schema-validator-version>
+        <json-schema-validator-version>2.0.1</json-schema-validator-version>
 
         <logback-version>1.5.22</logback-version>
         <junit-version>4.13.2</junit-version>
