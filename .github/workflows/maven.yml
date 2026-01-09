@@ -51,7 +51,8 @@ jobs:
         if [[ $MY_POM_VERSION =~ ^.*SNAPSHOT$ ]];
         then
           # Run integration tests and package (unit tests already ran in test step)
-          ./mvnw --no-transfer-progress -B verify -DskipTests
+          # -DskipTests skips unit tests, -DskipITs=false ensures integration tests run
+          ./mvnw --no-transfer-progress -B verify -DskipTests -DskipITs=false
           export MY_JAVA_VERSION=`java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1`
           echo "JAVA VERSION" ${MY_JAVA_VERSION}
           if [[ ${MY_JAVA_VERSION} == "8" ]] && [[ "${SKIP_DEPLOY}" != "true" ]];
