@@ -11,6 +11,11 @@ on:
 
 jobs:
   CodeQL-Build:
+    permissions:
+      actions: read
+      contents: read
+      # Forks don't have security-events access, but we still need it for upstream
+      security-events: write
 
     runs-on: ubuntu-latest
 
@@ -18,27 +23,31 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
         languages: java
 
-    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-    # If this step fails, then you should remove it and run the build manually (see below)
     - name: Autobuild
       uses: github/codeql-action/autobuild@v3
 
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 https://git.io/JvXDl
-
-    # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
-    #    and modify them (or add more) to build your code if your project
-    #    uses a compiled language
-
-    #- run: |
-    #   make bootstrap
-    #   make release
-
+    # Upload results to Security tab (only works on upstream repo)
     - name: Perform CodeQL Analysis
+      if: github.repository == 'swagger-api/swagger-inflector'
       uses: github/codeql-action/analyze@v3
+
+    # On forks: output SARIF to file and upload as artifact
+    - name: Perform CodeQL Analysis (fork)
+      if: github.repository != 'swagger-api/swagger-inflector'
+      uses: github/codeql-action/analyze@v3
+      with:
+        output: codeql-results
+        upload: false
+
+    - name: Upload CodeQL results as artifact
+      if: github.repository != 'swagger-api/swagger-inflector'
+      uses: actions/upload-artifact@v4
+      with:
+        name: codeql-results
+        path: codeql-results
+        retention-days: 30
