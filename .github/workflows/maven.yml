@@ -14,6 +14,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Make mvnw executable
+      run: chmod +x mvnw
     - name: Set up Java
       uses: actions/setup-java@v4
       with:
@@ -31,7 +33,7 @@ jobs:
           ${{ runner.os }}-maven-
     - name: Run tests
       run: |
-        ./mvnw --no-transfer-progress -B test --file pom.xml
+        ./mvnw --no-transfer-progress -B test
     - name: Build with Maven, Deploy snapshot to maven central
       run: |
         # Check if this is a fork - skip deployment for forks
@@ -49,7 +51,7 @@ jobs:
         if [[ $MY_POM_VERSION =~ ^.*SNAPSHOT$ ]];
         then
           # Run integration tests and package (unit tests already ran in test step)
-          ./mvnw --no-transfer-progress -B verify -DskipTests --file pom.xml
+          ./mvnw --no-transfer-progress -B verify -DskipTests
           export MY_JAVA_VERSION=`java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1`
           echo "JAVA VERSION" ${MY_JAVA_VERSION}
           if [[ ${MY_JAVA_VERSION} == "8" ]] && [[ "${SKIP_DEPLOY}" != "true" ]];
