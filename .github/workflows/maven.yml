@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ 8, 11 ]
+        java: [ 8, 11, 17, 21 ]
 
     steps:
     - uses: actions/checkout@v4
@@ -29,6 +29,9 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
+    - name: Run tests
+      run: |
+        mvn --no-transfer-progress -B test --file pom.xml
     - name: Build with Maven, Deploy snapshot to maven central
       run: |
         # Check if this is a fork - skip deployment for forks
@@ -45,7 +48,8 @@ jobs:
         echo "POM VERSION" ${MY_POM_VERSION}
         if [[ $MY_POM_VERSION =~ ^.*SNAPSHOT$ ]];
         then
-          mvn --no-transfer-progress -B verify --file pom.xml
+          # Run integration tests and package (unit tests already ran in test step)
+          mvn --no-transfer-progress -B verify -DskipTests --file pom.xml
           export MY_JAVA_VERSION=`java -version 2>&1 | head -1 | cut -d'"' -f2 | sed '/^1\./s///' | cut -d'.' -f1`
           echo "JAVA VERSION" ${MY_JAVA_VERSION}
           if [[ ${MY_JAVA_VERSION} == "8" ]] && [[ "${SKIP_DEPLOY}" != "true" ]];
