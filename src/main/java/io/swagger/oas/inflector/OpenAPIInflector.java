@@ -6,10 +6,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.fasterxml.jackson.jaxrs.yaml.JacksonYAMLProvider;
+import io.swagger.oas.inflector.config.Configuration;
 import io.swagger.oas.inflector.config.ExposedSpecOptions;
 import io.swagger.oas.inflector.config.FilterFactory;
-
-import io.swagger.oas.inflector.config.Configuration;
 import io.swagger.oas.inflector.controllers.InflectResultController;
 import io.swagger.oas.inflector.controllers.OpenAPIOperationController;
 import io.swagger.oas.inflector.controllers.OpenAPIResourceController;
@@ -19,32 +18,31 @@ import io.swagger.oas.inflector.models.InflectResult;
 import io.swagger.oas.inflector.processors.EntityProcessor;
 import io.swagger.oas.inflector.processors.EntityProcessorFactory;
 import io.swagger.oas.inflector.processors.JacksonProcessor;
-import io.swagger.oas.inflector.processors.PlainProcessor;
-import io.swagger.oas.inflector.processors.PlainExampleProvider;
 import io.swagger.oas.inflector.processors.JsonExampleProvider;
 import io.swagger.oas.inflector.processors.JsonNodeExampleSerializer;
 import io.swagger.oas.inflector.processors.JsonProvider;
+import io.swagger.oas.inflector.processors.PlainExampleProvider;
+import io.swagger.oas.inflector.processors.PlainProcessor;
 import io.swagger.oas.inflector.processors.XMLExampleProvider;
 import io.swagger.oas.inflector.processors.YamlExampleProvider;
+import io.swagger.oas.inflector.schema.SchemaValidator;
 import io.swagger.oas.inflector.utils.DefaultContentTypeProvider;
 import io.swagger.oas.inflector.utils.DefaultSpecFilter;
 import io.swagger.oas.inflector.utils.ExtensionsUtil;
 import io.swagger.oas.inflector.validators.Validator;
 import io.swagger.v3.core.filter.OpenAPISpecFilter;
+import io.swagger.v3.core.util.Json;
+import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.jaxrs2.SwaggerSerializers;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-
-
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
-import io.swagger.v3.core.util.Json;
-import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.parser.util.ClasspathHelper;
 import io.swagger.v3.parser.util.RemoteUrl;
 import org.apache.commons.io.FileUtils;
@@ -63,7 +61,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.ContextResolver;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -80,12 +77,12 @@ public class OpenAPIInflector extends ResourceConfig {
     private String basePath;
     private String originalBasePath;
     private ServletContext servletContext;
-    private Map<String, List<String>> missingOperations = new HashMap<>();
-    private Set<String> unimplementedMappedModels = new TreeSet<>();
+    private final Map<String, List<String>> missingOperations = new HashMap<>();
+    private final Set<String> unimplementedMappedModels = new TreeSet<>();
 
 
 
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     public OpenAPIInflector(Configuration configuration) {
         this(configuration, Json.mapper());
@@ -135,6 +132,10 @@ public class OpenAPIInflector extends ResourceConfig {
         }
         
         OpenAPI openAPI = swaggerParseResult.getOpenAPI();
+
+        if (openAPI != null) {
+            SchemaValidator.setOpenApiVersion(openAPI.getOpenapi());
+        }
 
         OpenAPI exposedAPI = getExposedAPI(config);
 
@@ -228,7 +229,7 @@ public class OpenAPIInflector extends ResourceConfig {
                     FilterFactory.setFilter((OpenAPISpecFilter) OpenAPIInflector.class.getClassLoader().loadClass(config.getFilterClass()).newInstance());
                 }
                 catch (Exception e) {
-                    LOGGER.error("Unable to set filter class " + config.getFilterClass());
+                    LOGGER.error("Unable to set filter class {}", config.getFilterClass());
                 }
             }
         }
@@ -310,7 +311,7 @@ public class OpenAPIInflector extends ResourceConfig {
                     }
                     InputConverter.getInstance().addValidator((Validator) Class.forName(clsName).newInstance());
                 } catch (Exception e) {
-                    LOGGER.warn("unable to add validator `" + inputValidator + "`");
+                    LOGGER.warn("unable to add validator `{}`", inputValidator);
                     e.printStackTrace();
                 }
             }
@@ -327,10 +328,10 @@ public class OpenAPIInflector extends ResourceConfig {
                     if ("defaultConverter".equalsIgnoreCase(converter)) {
                         clsName = "io.swagger.oas.inflector.converters.DefaultConverter";
                     }
-                    LOGGER.debug("adding converter `" + clsName + "`");
+                    LOGGER.debug("adding converter `{}`", clsName);
                     InputConverter.getInstance().addConverter((Converter) Class.forName(clsName).newInstance());
                 } catch (Exception e) {
-                    LOGGER.warn("unable to add validator `" + converter + "`");
+                    LOGGER.warn("unable to add converter `{}`", converter);
                 }
             }
         } else {
@@ -358,7 +359,7 @@ public class OpenAPIInflector extends ResourceConfig {
             for(String key: missingOperations.keySet()) {
                 LOGGER.debug(key);
                 for(String val: missingOperations.get(key)) {
-                    LOGGER.debug(" - " + val);
+                    LOGGER.debug(" - {}", val);
                 }
             }
             final Resource.Builder builder = Resource.builder();
@@ -371,7 +372,7 @@ public class OpenAPIInflector extends ResourceConfig {
                 debugPath = basePath(originalBasePath, config.getSwaggerBase() + "/debug.json");
             }
 
-            LOGGER.debug("using debug path: `" + debugPath + "`");
+            LOGGER.debug("using debug path: `{}`", debugPath);
             builder.path(debugPath)
                     .addMethod(HttpMethod.GET)
                     .produces(MediaType.APPLICATION_JSON)
@@ -387,21 +388,21 @@ public class OpenAPIInflector extends ResourceConfig {
             for(String key: missingOperations.keySet()) {
                 LOGGER.warn(key);
                 for(String val: missingOperations.get(key)) {
-                    LOGGER.warn(" - " + val);
+                    LOGGER.warn(" - {}", val);
                 }
             }
         }
         else if (Configuration.Environment.PRODUCTION.equals(configuration.getEnvironment())) {
-            if(missingOperations.size() > 0) {
+            if(!missingOperations.isEmpty()) {
                 LOGGER.error("There are unimplemented operations!");
             }
             for(String key: missingOperations.keySet()) {
                 LOGGER.error(key);
                 for(String val: missingOperations.get(key)) {
-                    LOGGER.error(" - " + val);
+                    LOGGER.error(" - {}", val);
                 }
             }
-            if(missingOperations.size() > 0) {
+            if(!missingOperations.isEmpty()) {
                 LOGGER.error("Unable to start due to unimplemented methods");
                 throw new RuntimeException("Unable to start due to unimplemented methods");
             }
@@ -449,7 +450,7 @@ public class OpenAPIInflector extends ResourceConfig {
             processor.enableType(type);
         }
         catch (Exception e) {
-            LOGGER.error("unable to initialize class " + cls);
+            LOGGER.error("unable to initialize class {}", cls);
         }
     }
 
@@ -476,7 +477,7 @@ public class OpenAPIInflector extends ResourceConfig {
     }
 
     private void addOperation(String pathString, Resource.Builder builder, String method, Operation operation, Map<String, Schema> definitions) {
-        LOGGER.debug("adding operation for `" + pathString + "` " + method);
+        LOGGER.debug("adding operation for `{}` {}", pathString, method);
         if (operation.getRequestBody() != null){
             RequestBody body = operation.getRequestBody();
             if(body.getContent() != null){
@@ -521,7 +522,7 @@ public class OpenAPIInflector extends ResourceConfig {
                     builder.addMethod(method).handledBy(controller).consumes(media.toString());
                 }
             } catch (Exception e) {
-                LOGGER.error("unable to find a matching mediatype for " + mediaType + " in " + controller.getMethodName());
+                LOGGER.error("unable to find a matching mediatype for {} in {}", mediaType, controller.getMethodName());
             }
         }else{
             builder.addMethod(method).handledBy(controller);
@@ -564,7 +565,7 @@ public class OpenAPIInflector extends ResourceConfig {
                     path = Paths.get(location);
                 }
 
-                if (Files.exists(path, new LinkOption[0])) {
+                if (Files.exists(path)) {
                     data = FileUtils.readFileToString(path.toFile(), "UTF-8");
                 } else {
                     data = ClasspathHelper.loadFileFromClasspath(location);
@@ -572,9 +573,9 @@ public class OpenAPIInflector extends ResourceConfig {
                 exposedAPI = getRightMapper(data).readValue(data, OpenAPI.class);
             }
         } catch (SSLHandshakeException e) {
-            LOGGER.error("unable to read location `" + location + "` due to a SSL configuration error.  It is possible that the server SSL certificate is invalid, self-signed, or has an untrusted Certificate Authority.", e);
+            LOGGER.error("unable to read location `{}` due to a SSL configuration error.  It is possible that the server SSL certificate is invalid, self-signed, or has an untrusted Certificate Authority.", location, e);
         } catch (Exception e1) {
-            LOGGER.error("unable to read location `" + location + "`", e1);
+            LOGGER.error("unable to read location `{}`", location, e1);
         }
         return exposedAPI;
     }

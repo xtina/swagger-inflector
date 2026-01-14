@@ -6,10 +6,12 @@ import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.SpecificationVersion;
 import io.swagger.oas.inflector.schema.SchemaValidator;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.List;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
@@ -18,6 +20,11 @@ import static org.testng.Assert.assertTrue;
 
 public class SchemaValidationTest {
 
+    @BeforeMethod
+    public void setUp() {
+        // Default to OAS 3.0 for tests (enables schema conversion)
+        SchemaValidator.setOpenApiVersion("3.0");
+    }
 
     @Test
     public void testValidPayload() {
@@ -105,7 +112,7 @@ public class SchemaValidationTest {
     }
 
     @Test
-    public void testValidation() throws Exception {
+    public void testValidation() {
         String schemaAsString =
                 "{\n" +
                 "  \"properties\": {\n" +
@@ -200,10 +207,11 @@ public class SchemaValidationTest {
         assertTrue(SchemaValidator.validate(null, schema, SchemaValidator.Direction.INPUT));
     }
 
-    // OpenAPI 3.1 / JSON Schema 2020-12 specific tests
+    // OpenAPI 3.1 / JSON Schema 2020-12 specific tests (require version switch)
 
     @Test
     public void testOpenApi31TypeArray() {
+        SchemaValidator.setOpenApiVersion("3.1.0");
         // OpenAPI 3.1 allows type to be an array (replaces nullable)
         String schema = "{\"type\": [\"string\", \"null\"]}";
 
@@ -213,6 +221,7 @@ public class SchemaValidationTest {
 
     @Test
     public void testOpenApi31Const() {
+        SchemaValidator.setOpenApiVersion("3.1.0");
         String schema = "{\"const\": \"fixed\"}";
 
         assertTrue(SchemaValidator.validate("fixed", schema, SchemaValidator.Direction.INPUT));
@@ -221,6 +230,7 @@ public class SchemaValidationTest {
 
     @Test
     public void testOpenApi31ExclusiveMinMax() {
+        SchemaValidator.setOpenApiVersion("3.1.0");
         // In 2020-12, exclusiveMinimum/Maximum are numeric values
         String schema = "{\"type\": \"integer\", \"exclusiveMinimum\": 0, \"exclusiveMaximum\": 10}";
 
@@ -318,6 +328,148 @@ public class SchemaValidationTest {
 
         assertTrue(SchemaValidator.validate("red", schema, SchemaValidator.Direction.INPUT));
         assertFalse(SchemaValidator.validate("yellow", schema, SchemaValidator.Direction.INPUT));
+    }
+
+    // OpenAPI 3.0 compatibility tests - uses Draft-04 validator (nullable converted, boolean exclusiveMin/Max native)
+
+    @Test
+    public void testOas30Nullable() {
+        // OAS 3.0 "nullable: true" is converted to type array (nullable is OAS extension, not in Draft-04)
+        String schema = "{\"type\": \"string\", \"nullable\": true}";
+
+        assertTrue(SchemaValidator.validate("hello", schema, SchemaValidator.Direction.INPUT));
+        assertTrue(SchemaValidator.validate(null, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas30ExclusiveMinimumBoolean() {
+        // Draft-04 natively supports boolean exclusiveMinimum
+        String schema = "{\"type\": \"integer\", \"minimum\": 5, \"exclusiveMinimum\": true}";
+
+        assertTrue(SchemaValidator.validate(10, schema, SchemaValidator.Direction.INPUT));
+        assertFalse(SchemaValidator.validate(5, schema, SchemaValidator.Direction.INPUT));
+        assertTrue(SchemaValidator.validate(6, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas30ExclusiveMaximumBoolean() {
+        // Draft-04 natively supports boolean exclusiveMaximum
+        String schema = "{\"type\": \"integer\", \"maximum\": 10, \"exclusiveMaximum\": true}";
+
+        assertTrue(SchemaValidator.validate(5, schema, SchemaValidator.Direction.INPUT));
+        assertFalse(SchemaValidator.validate(10, schema, SchemaValidator.Direction.INPUT));
+        assertTrue(SchemaValidator.validate(9, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas30NullableObject() {
+        // OAS 3.0 nullable on object type - converted to type array
+        String schema = "{\"type\": \"object\", \"nullable\": true, \"properties\": {\"name\": {\"type\": \"string\"}}}";
+
+        User user = new User();
+        user.name = "Test";
+        assertTrue(SchemaValidator.validate(user, schema, SchemaValidator.Direction.INPUT));
+        assertTrue(SchemaValidator.validate(null, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas30TypeArrayNullable() {
+        // Type arrays also work in Draft-04 for nullable
+        String schema = "{\"type\": [\"string\", \"null\"]}";
+
+        assertTrue(SchemaValidator.validate("hello", schema, SchemaValidator.Direction.INPUT));
+        assertTrue(SchemaValidator.validate(null, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas30NestedNullable() {
+        // Nullable in nested properties is also converted
+        String schema = "{\n" +
+                "  \"type\": \"object\",\n" +
+                "  \"properties\": {\n" +
+                "    \"name\": {\"type\": \"string\", \"nullable\": true},\n" +
+                "    \"age\": {\"type\": \"integer\", \"minimum\": 0, \"exclusiveMinimum\": true}\n" +
+                "  }\n" +
+                "}";
+
+        User user = new User();
+        user.name = null;
+        assertTrue(SchemaValidator.validate(user, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas30NullableFalseUnchanged() {
+        // nullable: false should not add null to type array
+        String schema = "{\"type\": \"string\", \"nullable\": false}";
+
+        assertTrue(SchemaValidator.validate("hello", schema, SchemaValidator.Direction.INPUT));
+        assertFalse(SchemaValidator.validate(null, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas30ExclusiveMinFalseUnchanged() {
+        // exclusiveMinimum: false keeps minimum as inclusive (Draft-04 native behavior)
+        String schema = "{\"type\": \"integer\", \"minimum\": 5, \"exclusiveMinimum\": false}";
+
+        assertTrue(SchemaValidator.validate(5, schema, SchemaValidator.Direction.INPUT));
+        assertTrue(SchemaValidator.validate(6, schema, SchemaValidator.Direction.INPUT));
+        assertFalse(SchemaValidator.validate(4, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    // Version switching tests
+
+    @Test
+    public void testVersionSwitchingTo31() {
+        SchemaValidator.setOpenApiVersion("3.1.0");
+        assertEquals(SchemaValidator.getOpenApiVersion(), SchemaValidator.OpenApiVersion.V3_1);
+    }
+
+    @Test
+    public void testVersionSwitchingTo30() {
+        SchemaValidator.setOpenApiVersion("3.0.3");
+        assertEquals(SchemaValidator.getOpenApiVersion(), SchemaValidator.OpenApiVersion.V3_0);
+    }
+
+    @Test
+    public void testOas31NullableNotConverted() {
+        // In OAS 3.1 mode, nullable keyword is not converted (it's ignored by 2020-12 validator)
+        SchemaValidator.setOpenApiVersion("3.1.0");
+        String schema = "{\"type\": \"string\", \"nullable\": true}";
+
+        assertTrue(SchemaValidator.validate("hello", schema, SchemaValidator.Direction.INPUT));
+        // Fails because nullable is not recognized by 2020-12 and no conversion happens
+        assertFalse(SchemaValidator.validate(null, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas31TypeArrayWorks() {
+        // In OAS 3.1 mode, type arrays work natively
+        SchemaValidator.setOpenApiVersion("3.1.0");
+        String schema = "{\"type\": [\"string\", \"null\"]}";
+
+        assertTrue(SchemaValidator.validate("hello", schema, SchemaValidator.Direction.INPUT));
+        assertTrue(SchemaValidator.validate(null, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas31ExclusiveMinNumeric() {
+        // In OAS 3.1 mode, numeric exclusiveMinimum works natively
+        SchemaValidator.setOpenApiVersion("3.1.0");
+        String schema = "{\"type\": \"integer\", \"exclusiveMinimum\": 5}";
+
+        assertTrue(SchemaValidator.validate(6, schema, SchemaValidator.Direction.INPUT));
+        assertFalse(SchemaValidator.validate(5, schema, SchemaValidator.Direction.INPUT));
+    }
+
+    @Test
+    public void testOas31BooleanExclusiveMinIgnored() {
+        // In OAS 3.1 mode, boolean exclusiveMinimum is ignored (no conversion)
+        SchemaValidator.setOpenApiVersion("3.1.0");
+        String schema = "{\"type\": \"integer\", \"minimum\": 5, \"exclusiveMinimum\": true}";
+
+        // 5 passes because boolean exclusiveMinimum is ignored, minimum is still enforced
+        assertTrue(SchemaValidator.validate(5, schema, SchemaValidator.Direction.INPUT));
+        assertTrue(SchemaValidator.validate(6, schema, SchemaValidator.Direction.INPUT));
     }
 
     static class User {
