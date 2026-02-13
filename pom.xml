@@ -65,7 +65,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.4.1</version>
+                    <version>${enforcer-plugin-version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -534,6 +534,7 @@
         <commons-lang-version>3.18.0</commons-lang-version>
         <commons-csv-version>1.10.0</commons-csv-version>
         <json-schema-validator-version>2.0.1</json-schema-validator-version>
+        <enforcer-plugin-version>3.4.1</enforcer-plugin-version>
 
         <logback-version>1.5.22</logback-version>
         <junit-version>4.13.2</junit-version>
